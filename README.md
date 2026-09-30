@@ -1,1 +1,1 @@
-# Aswatha-R
+# Aswatha-EduGenie
