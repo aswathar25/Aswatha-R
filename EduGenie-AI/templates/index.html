@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>EduGenie AI</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            color: #222;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: #4f46e5;
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            font-size: 16px;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 900px;
+            margin: 35px auto;
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        select,
+        textarea {
+            width: 100%;
+            padding: 13px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: #4f46e5;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 17px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #3730a3;
+        }
+
+        #loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+
+        #resultBox {
+            display: none;
+            margin-top: 25px;
+            padding: 20px;
+            background: #f8fafc;
+            border-left: 5px solid #4f46e5;
+            border-radius: 8px;
+        }
+
+        #result {
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+
+        .error {
+            color: #b91c1c;
+        }
+
+        .quiz-question {
+            margin-bottom: 25px;
+        }
+
+        .quiz-question h3 {
+            margin-bottom: 12px;
+        }
+
+        .quiz-option {
+            display: block;
+            padding: 10px;
+            margin: 7px 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 7px;
+        }
+
+        .quiz-check {
+            margin-top: 15px;
+            background: #16a34a;
+        }
+
+        .quiz-check:hover {
+            background: #15803d;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <h1>🎓 EduGenie AI</h1>
+        <p>Your Google Gemini Powered Learning Assistant</p>
+    </div>
+
+    <div class="container">
+
+        <div class="card">
+
+            <label for="task">Choose a Learning Task</label>
+
+            <select id="task">
+                <option value="qa">Ask a Question</option>
+                <option value="explain">Explain a Topic</option>
+                <option value="quiz">Generate Quiz</option>
+                <option value="summarize">Summarize Text</option>
+                <option value="learn">Learning Path</option>
+            </select>
+
+            <label for="inputText">Enter your question or text</label>
+
+            <textarea
+                id="inputText"
+                placeholder="Example: What is inheritance in Java?"
+            ></textarea>
+
+            <button onclick="askEduGenie()">
+                Ask EduGenie
+            </button>
+
+            <div id="loading">
+                ⏳ EduGenie is thinking...
+            </div>
+
+            <div id="resultBox">
+                <h2>Result</h2>
+                <br>
+                <div id="result"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+<script>
+
+async function askEduGenie() {
+
+    const task = document.getElementById("task").value;
+    const inputText = document.getElementById("inputText").value.trim();
+
+    const loading = document.getElementById("loading");
+    const resultBox = document.getElementById("resultBox");
+    const result = document.getElementById("result");
+
+    if (!inputText) {
+        alert("Please enter a question or text.");
+        return;
+    }
+
+    loading.style.display = "block";
+    resultBox.style.display = "none";
+    result.innerHTML = "";
+
+    let endpoint = "";
+    let body = {};
+
+    if (task === "qa") {
+        endpoint = "/qa";
+        body = {
+            question: inputText
+        };
+    }
+
+    else if (task === "explain") {
+        endpoint = "/explain";
+        body = {
+            question: inputText
+        };
+    }
+
+    else if (task === "quiz") {
+        endpoint = "/quiz";
+        body = {
+            question: inputText
+        };
+    }
+
+    else if (task === "summarize") {
+        endpoint = "/summarize";
+        body = {
+            text: inputText
+        };
+    }
+
+    else if (task === "learn") {
+        endpoint = "/learn/recommendations";
+        body = {
+            question: inputText
+        };
+    }
+
+    try {
+
+        const response = await fetch(endpoint, {
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify(body)
+        });
+
+        const data = await response.json();
+
+        loading.style.display = "none";
+        resultBox.style.display = "block";
+
+        if (!response.ok) {
+            result.innerHTML =
+                "<p class='error'>Error: " +
+                escapeHtml(data.detail || "Something went wrong.") +
+                "</p>";
+
+            return;
+        }
+
+        if (task === "quiz") {
+            displayQuiz(data.result);
+        }
+        else {
+            result.textContent = data.result;
+        }
+
+    }
+
+    catch (error) {
+
+        loading.style.display = "none";
+        resultBox.style.display = "block";
+
+        result.innerHTML =
+            "<p class='error'>Could not connect to EduGenie.</p>" +
+            "<p>" + escapeHtml(error.message) + "</p>";
+    }
+}
+
+
+function displayQuiz(quiz) {
+
+    const result = document.getElementById("result");
+
+    result.innerHTML = "";
+
+    quiz.forEach((item, index) => {
+
+        const questionDiv = document.createElement("div");
+
+        questionDiv.className = "quiz-question";
+
+        let html = `
+            <h3>${index + 1}. ${escapeHtml(item.question)}</h3>
+        `;
+
+        item.options.forEach((option, optionIndex) => {
+
+            html += `
+                <label class="quiz-option">
+                    <input
+                        type="radio"
+                        name="question${index}"
+                        value="${escapeHtml(option)}"
+                    >
+                    ${escapeHtml(option)}
+                </label>
+            `;
+        });
+
+        questionDiv.innerHTML = html;
+
+        result.appendChild(questionDiv);
+    });
+
+    const checkButton = document.createElement("button");
+
+    checkButton.className = "quiz-check";
+    checkButton.textContent = "Check Answers";
+
+    checkButton.onclick = function() {
+
+        let score = 0;
+
+        quiz.forEach((item, index) => {
+
+            const selected =
+                document.querySelector(
+                    `input[name="question${index}"]:checked`
+                );
+
+            if (selected && selected.value === item.answer) {
+                score++;
+            }
+        });
+
+        const scoreText = document.createElement("h3");
+
+        scoreText.style.marginTop = "20px";
+
+        scoreText.textContent =
+            `Your Score: ${score} / ${quiz.length}`;
+
+        result.appendChild(scoreText);
+    };
+
+    result.appendChild(checkButton);
+}
+
+
+function escapeHtml(text) {
+
+    const div = document.createElement("div");
+
+    div.textContent = text;
+
+    return div.innerHTML;
+}
+
+</script>
+
+</body>
+</html>
