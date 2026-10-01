@@ -1,8 +1,0 @@
-fastapi
-uvicorn[standard]
-python-dotenv
-pydantic
-google-genai
-jinja2
-transformers
-torch
